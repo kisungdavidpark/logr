@@ -3,6 +3,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { useTabStore } from "../../stores/tabStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import HighlightPanel from "../HighlightPanel";
+import HelpModal from "../HelpModal";
 import { HighlightRule } from "../../types";
 import { useT } from "../../i18n";
 import type { Language } from "../../i18n/translations";
@@ -204,47 +205,9 @@ export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps)
         <HighlightPanel rules={activeTab.highlights ?? []} onChange={handleHighlightsChange} onClose={() => setShowHighlights(false)} />
       )}
 
-      {/* About 다이얼로그 */}
+      {/* Help 다이얼로그 */}
       {showAbout && (
-        <div
-          className="fixed inset-0 flex items-center justify-center"
-          style={{ zIndex: 300, backgroundColor: "rgba(0,0,0,0.45)" }}
-          onClick={() => setShowAbout(false)}
-        >
-          <div
-            className="flex flex-col gap-3 p-5 rounded-lg select-none"
-            style={{ backgroundColor: "var(--color-bg-secondary)", border: "1px solid var(--color-border)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", minWidth: 280, maxWidth: 340 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-col gap-1">
-              <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>Tail</div>
-              <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{t("about.description")}</div>
-            </div>
-            <div className="text-xs" style={{ color: "var(--color-text-secondary)", opacity: 0.7 }}>{t("about.features")}</div>
-            <div style={{ borderTop: "1px solid var(--color-border)" }} />
-            <div className="flex flex-col gap-1.5 text-xs" style={{ color: "var(--color-text-secondary)" }}>
-              <div className="flex justify-between">
-                <span>{t("about.version")}</span>
-                <span style={{ color: "var(--color-text-primary)", fontFamily: "monospace" }}>v{appVersion}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{t("about.license")}</span>
-                <span style={{ color: "var(--color-text-primary)" }}>MIT</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{t("about.github")}</span>
-                <span style={{ color: "var(--color-accent)", fontFamily: "monospace", fontSize: 10 }}>kisungdavidpark/tail-app</span>
-              </div>
-            </div>
-            <button
-              className="text-xs py-1.5 rounded hover:opacity-80 mt-1"
-              style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
-              onClick={() => setShowAbout(false)}
-            >
-              {t("about.close")}
-            </button>
-          </div>
-        </div>
+        <HelpModal appVersion={appVersion} onClose={() => setShowAbout(false)} />
       )}
 
       {/* 드롭다운 닫기용 배경 오버레이 */}
