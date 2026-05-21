@@ -103,6 +103,14 @@ export const translations = {
     "ssh.connecting": "연결 중…",
     "ssh.open": "열기",
     "ssh.connectFailed": "SSH 연결 실패",
+    // About
+    "about.title": "Tail — 리얼타임 로그 뷰어",
+    "about.description": "Unix tail -f를 대체하는 실시간 로그 뷰어",
+    "about.features": "멀티탭 · 검색 · 필터 · 하이라이트 · SSH · 인코딩 지원",
+    "about.version": "버전",
+    "about.license": "MIT License",
+    "about.github": "GitHub",
+    "about.close": "닫기",
   },
   en: {
     // Sidebar
@@ -208,6 +216,14 @@ export const translations = {
     "ssh.connecting": "Connecting…",
     "ssh.open": "Open",
     "ssh.connectFailed": "SSH connection failed",
+    // About
+    "about.title": "Tail — Realtime Log Viewer",
+    "about.description": "A GUI replacement for Unix tail -f",
+    "about.features": "Multi-tab · Search · Filter · Highlight · SSH · Encoding",
+    "about.version": "Version",
+    "about.license": "MIT License",
+    "about.github": "GitHub",
+    "about.close": "Close",
   },
 } as const;
 

@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import { useTabStore } from "../../stores/tabStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import HighlightPanel from "../HighlightPanel";
@@ -22,9 +23,15 @@ export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps)
   const [showEncodings, setShowEncodings] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportLineCount, setExportLineCount] = useState(0);
+  const [appVersion, setAppVersion] = useState("0.1.0");
   const encodingBtnRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => {});
+  }, []);
 
   const handleToggleFollow = () => {
     if (!activeTab) return;
@@ -77,6 +84,16 @@ export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps)
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {/* About 버튼 */}
+        <button
+          className="px-2 py-0.5 rounded text-xs hover:opacity-80 font-mono"
+          style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
+          onClick={() => { setShowAbout((v) => !v); setShowEncodings(false); setShowHighlights(false); setShowExportMenu(false); }}
+          title={t("about.title")}
+        >
+          ?
+        </button>
+
         {/* 언어 토글 */}
         <button
           className="px-2 py-0.5 rounded text-xs hover:opacity-80 font-mono"
@@ -185,6 +202,49 @@ export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps)
       {/* 하이라이트 패널 */}
       {showHighlights && activeTab && (
         <HighlightPanel rules={activeTab.highlights ?? []} onChange={handleHighlightsChange} onClose={() => setShowHighlights(false)} />
+      )}
+
+      {/* About 다이얼로그 */}
+      {showAbout && (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: 300, backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShowAbout(false)}
+        >
+          <div
+            className="flex flex-col gap-3 p-5 rounded-lg select-none"
+            style={{ backgroundColor: "var(--color-bg-secondary)", border: "1px solid var(--color-border)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", minWidth: 280, maxWidth: 340 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>Tail</div>
+              <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{t("about.description")}</div>
+            </div>
+            <div className="text-xs" style={{ color: "var(--color-text-secondary)", opacity: 0.7 }}>{t("about.features")}</div>
+            <div style={{ borderTop: "1px solid var(--color-border)" }} />
+            <div className="flex flex-col gap-1.5 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              <div className="flex justify-between">
+                <span>{t("about.version")}</span>
+                <span style={{ color: "var(--color-text-primary)", fontFamily: "monospace" }}>v{appVersion}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("about.license")}</span>
+                <span style={{ color: "var(--color-text-primary)" }}>MIT</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("about.github")}</span>
+                <span style={{ color: "var(--color-accent)", fontFamily: "monospace", fontSize: 10 }}>kisungdavidpark/tail-app</span>
+              </div>
+            </div>
+            <button
+              className="text-xs py-1.5 rounded hover:opacity-80 mt-1"
+              style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
+              onClick={() => setShowAbout(false)}
+            >
+              {t("about.close")}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* 드롭다운 닫기용 배경 오버레이 */}

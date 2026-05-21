@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            artifact_ext: dmg
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            artifact_ext: dmg
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_ext: msi
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Tail ${{ github.ref_name }}'
+          releaseBody: |
+            ## Tail ${{ github.ref_name }}
+
+            리얼타임 로그 뷰어 — Unix `tail -f` GUI 대체 앱
+
+            ### 다운로드
+            - **macOS (Apple Silicon)**: `tail-app_*_aarch64.dmg`
+            - **macOS (Intel)**: `tail-app_*_x64.dmg`
+            - **Windows**: `tail-app_*_x64_en-US.msi`
+
+            ### 주요 기능
+            - 멀티탭 실시간 로그 모니터링
+            - 검색 (정규식 지원)
+            - 필터 (레벨, 포함/제외 텍스트)
+            - 하이라이트 규칙
+            - SSH 원격 파일 지원
+            - 인코딩 자동 감지 (UTF-8, EUC-KR, CP949, UTF-16)
+            - 내보내기 (.txt / .csv)
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.target }}
