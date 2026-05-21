@@ -71,6 +71,9 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isCapped, setIsCapped] = useState(false);
 
+  // 우클릭 컨텍스트 메뉴
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; selectedText: string } | null>(null);
+
   // 검색 상태 — 네비게이션 모드: 전체 뷰 유지, 매칭 줄 강조 + 이동
   const [showSearch, setShowSearch] = useState(false);
   const [searchMatchMap, setSearchMatchMap] = useState<Map<number, { start: number; end: number }> | null>(null);
@@ -442,6 +445,32 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
     [searchMatchList, virtualizer]
   );
 
+  // ── 우클릭 컨텍스트 메뉴 ──
+  const ENCODINGS = ["UTF-8", "EUC-KR", "CP949", "UTF-16", "UTF-16BE"];
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (!activeTab) return;
+    e.preventDefault();
+    const selectedText = window.getSelection()?.toString().trim() ?? "";
+    setCtxMenu({ x: e.clientX, y: e.clientY, selectedText });
+  }, [activeTab]);
+
+  const handleReEncodeSelected = useCallback(async (encoding: string, selectedText: string) => {
+    setCtxMenu(null);
+    if (!selectedText) return;
+    // 선택된 텍스트를 지정 인코딩으로 재해석하여 팝업으로 표시
+    try {
+      const result = await invoke<string>("reencode_text", { text: selectedText, encoding });
+      setReEncodeResult({ original: selectedText, encoded: result, encoding });
+    } catch {
+      setReEncodeResult({ original: selectedText, encoded: selectedText, encoding });
+    }
+  }, []);
+
+  const [reEncodeResult, setReEncodeResult] = useState<{
+    original: string; encoded: string; encoding: string;
+  } | null>(null);
+
   // ── 키보드 단축키 ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -562,6 +591,7 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
         ref={parentRef}
         className="flex-1 overflow-y-auto font-mono text-xs"
         onScroll={handleScroll}
+        onContextMenu={handleContextMenu}
         style={{ color: "var(--color-text-primary)" }}
       >
         {displayLines.length === 0 ? (
@@ -674,6 +704,123 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
           }}
         >
           {t("viewer.jumpToLatest")}
+        </div>
+      )}
+
+      {/* 우클릭 컨텍스트 메뉴 */}
+      {ctxMenu && (
+        <>
+          <div className="fixed inset-0" style={{ zIndex: 400 }} onClick={() => setCtxMenu(null)} />
+          <div
+            className="fixed flex flex-col py-1 rounded-lg shadow-xl"
+            style={{
+              left: ctxMenu.x,
+              top: ctxMenu.y,
+              zIndex: 401,
+              backgroundColor: "var(--color-bg-secondary)",
+              border: "1px solid var(--color-border)",
+              minWidth: 200,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            }}
+          >
+            {ctxMenu.selectedText ? (
+              <>
+                {/* 선택 텍스트 미리보기 */}
+                <div className="px-3 py-2 text-xs" style={{ color: "var(--color-text-secondary)", borderBottom: "1px solid var(--color-border)" }}>
+                  <div style={{ opacity: 0.6, marginBottom: 2 }}>{t("ctx.selectedText")}</div>
+                  <div
+                    className="font-mono truncate"
+                    style={{ color: "var(--color-text-primary)", maxWidth: 220 }}
+                    title={ctxMenu.selectedText}
+                  >
+                    {ctxMenu.selectedText.slice(0, 40)}{ctxMenu.selectedText.length > 40 ? "…" : ""}
+                  </div>
+                </div>
+                {/* 인코딩으로 재해석 */}
+                <div className="px-3 pt-2 pb-1 text-xs" style={{ color: "var(--color-text-secondary)", opacity: 0.7 }}>
+                  {t("ctx.reencodeAs")}
+                </div>
+                {ENCODINGS.map((enc) => (
+                  <button
+                    key={enc}
+                    className="text-left px-3 py-1.5 text-xs hover:opacity-80 font-mono"
+                    style={{ color: "var(--color-text-primary)" }}
+                    onClick={() => handleReEncodeSelected(enc, ctxMenu.selectedText)}
+                  >
+                    {enc}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <div className="px-3 py-2 text-xs italic" style={{ color: "var(--color-text-secondary)" }}>
+                {t("ctx.noSelection")}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 재인코딩 결과 팝업 */}
+      {reEncodeResult && (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: 500, backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setReEncodeResult(null)}
+        >
+          <div
+            className="flex flex-col rounded-lg overflow-hidden"
+            style={{
+              backgroundColor: "var(--color-bg-secondary)",
+              border: "1px solid var(--color-border)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+              width: 520,
+              maxWidth: "90vw",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div
+              className="flex items-center justify-between px-4 py-3 text-xs font-semibold"
+              style={{ borderBottom: "1px solid var(--color-border)", color: "var(--color-text-secondary)" }}
+            >
+              <span>{t("ctx.reencodeResult")} — <span style={{ color: "var(--color-accent)", fontFamily: "monospace" }}>{reEncodeResult.encoding}</span></span>
+              <button className="hover:opacity-80" onClick={() => setReEncodeResult(null)}>✕</button>
+            </div>
+            {/* 원문 */}
+            <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+              <div className="text-xs mb-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>{t("ctx.original")}</div>
+              <div
+                className="font-mono text-xs rounded p-2 break-all select-all"
+                style={{ backgroundColor: "var(--color-bg-primary)", color: "var(--color-text-secondary)", lineHeight: 1.6, maxHeight: 80, overflow: "auto" }}
+              >
+                {reEncodeResult.original}
+              </div>
+            </div>
+            {/* 변환 결과 */}
+            <div className="px-4 py-3">
+              <div className="text-xs mb-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>{t("ctx.reencoded")}</div>
+              <div
+                className="font-mono text-xs rounded p-2 break-all select-all"
+                style={{ backgroundColor: "var(--color-bg-primary)", color: "var(--color-text-primary)", lineHeight: 1.6, maxHeight: 160, overflow: "auto" }}
+              >
+                {reEncodeResult.encoded}
+              </div>
+            </div>
+            {/* 푸터 */}
+            <div
+              className="flex justify-between items-center px-4 py-3 text-xs"
+              style={{ borderTop: "1px solid var(--color-border)" }}
+            >
+              <span style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>{t("ctx.selectAllHint")}</span>
+              <button
+                className="px-3 py-1.5 rounded hover:opacity-80"
+                style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
+                onClick={() => setReEncodeResult(null)}
+              >
+                {t("ctx.close")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

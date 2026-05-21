@@ -97,6 +97,20 @@ pub async fn export_lines(path: String, content: String) -> Result<(), String> {
     .map_err(|e| format!("스레드 오류: {e}"))?
 }
 
+/// 선택된 텍스트(UTF-8 문자열)를 Latin-1 바이트로 변환한 뒤 지정 인코딩으로 재해석
+/// 잘못된 인코딩으로 표시된 텍스트를 올바른 인코딩으로 교정해서 확인할 때 사용
+#[tauri::command]
+pub async fn reencode_text(text: String, encoding: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || {
+        // UTF-8 문자열 → 원본 바이트 복원 시도 (Latin-1 역변환)
+        let bytes: Vec<u8> = text.chars().map(|c| c as u8).collect();
+        let result = decode_content(&bytes, &encoding);
+        Ok(result)
+    })
+    .await
+    .map_err(|e| format!("스레드 오류: {e}"))?
+}
+
 #[tauri::command]
 pub async fn get_file_size(path: String) -> Result<u64, String> {
     tokio::task::spawn_blocking(move || {
