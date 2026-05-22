@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Logr",
   "version": "0.2.5",
-  "identifier": "co.glus.tail-app",
+  "identifier": "co.glus.logr",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
