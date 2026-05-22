@@ -199,6 +199,12 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
     overscan: wrapLines ? 10 : 30,
   });
 
+  // wrapLines 토글 시 캐시된 row 높이 초기화 — 해제 후 ghost 여백 방지
+  useEffect(() => {
+    virtualizer.measure();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wrapLines]);
+
   const isSshTab = !!activeTab?.sshConnectionId;
 
   // 초기 파일 로드
@@ -455,17 +461,21 @@ export default function LogViewer({ onRegisterExport, displayLineCountRef }: Log
     setCtxMenu({ x: e.clientX, y: e.clientY, selectedText });
   }, [activeTab]);
 
-  const handleReEncodeSelected = useCallback(async (encoding: string, selectedText: string) => {
+  const handleReEncodeSelected = useCallback(async (toEncoding: string, selectedText: string) => {
     setCtxMenu(null);
     if (!selectedText) return;
-    // 선택된 텍스트를 지정 인코딩으로 재해석하여 팝업으로 표시
+    const fromEncoding = activeTab?.encoding ?? "UTF-8";
     try {
-      const result = await invoke<string>("reencode_text", { text: selectedText, encoding });
-      setReEncodeResult({ original: selectedText, encoded: result, encoding });
+      const result = await invoke<string>("reencode_text", {
+        text: selectedText,
+        fromEncoding,
+        toEncoding,
+      });
+      setReEncodeResult({ original: selectedText, encoded: result, encoding: toEncoding });
     } catch {
-      setReEncodeResult({ original: selectedText, encoded: selectedText, encoding });
+      setReEncodeResult({ original: selectedText, encoded: selectedText, encoding: toEncoding });
     }
-  }, []);
+  }, [activeTab?.encoding]);
 
   const [reEncodeResult, setReEncodeResult] = useState<{
     original: string; encoded: string; encoding: string;

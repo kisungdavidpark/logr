@@ -97,14 +97,33 @@ pub async fn export_lines(path: String, content: String) -> Result<(), String> {
     .map_err(|e| format!("스레드 오류: {e}"))?
 }
 
-/// 선택된 텍스트(UTF-8 문자열)를 Latin-1 바이트로 변환한 뒤 지정 인코딩으로 재해석
-/// 잘못된 인코딩으로 표시된 텍스트를 올바른 인코딩으로 교정해서 확인할 때 사용
+/// 현재 표시 인코딩(from_encoding)으로 텍스트를 바이트로 역변환한 뒤 to_encoding으로 재해석
+/// 예) EUC-KR로 열린 UTF-8 파일에서 선택 → from=EUC-KR, to=UTF-8 → 원본 복원
+pub fn encode_content(text: &str, encoding: &str) -> Vec<u8> {
+    match encoding.to_uppercase().as_str() {
+        "EUC-KR" | "EUCKR" => {
+            let (bytes, _, _) = encoding_rs::EUC_KR.encode(text);
+            bytes.into_owned()
+        }
+        "UTF-16" | "UTF-16LE" => {
+            let (bytes, _, _) = encoding_rs::UTF_16LE.encode(text);
+            bytes.into_owned()
+        }
+        "UTF-16BE" => {
+            let (bytes, _, _) = encoding_rs::UTF_16BE.encode(text);
+            bytes.into_owned()
+        }
+        _ => text.as_bytes().to_vec(),
+    }
+}
+
 #[tauri::command]
-pub async fn reencode_text(text: String, encoding: String) -> Result<String, String> {
+pub async fn reencode_text(text: String, from_encoding: String, to_encoding: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
-        // UTF-8 문자열 → 원본 바이트 복원 시도 (Latin-1 역변환)
-        let bytes: Vec<u8> = text.chars().map(|c| c as u8).collect();
-        let result = decode_content(&bytes, &encoding);
+        // 표시된 텍스트를 현재 인코딩으로 역변환해 원본 바이트 복원
+        let bytes = encode_content(&text, &from_encoding);
+        // 복원된 바이트를 목표 인코딩으로 재해석
+        let result = decode_content(&bytes, &to_encoding);
         Ok(result)
     })
     .await
