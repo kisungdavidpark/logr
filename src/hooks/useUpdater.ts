@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
-type UpdateState =
+export type UpdaterState =
   | { phase: "idle" }
   | { phase: "available"; update: Update }
   | { phase: "downloading"; progress: number }
@@ -10,7 +10,7 @@ type UpdateState =
   | { phase: "error"; message: string };
 
 export function useUpdater() {
-  const [state, setState] = useState<UpdateState>({ phase: "idle" });
+  const [state, setState] = useState<UpdaterState>({ phase: "idle" });
 
   useEffect(() => {
     const timer = setTimeout(async () => {

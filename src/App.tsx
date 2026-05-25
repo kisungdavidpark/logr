@@ -9,12 +9,14 @@ import { useTabStore } from "./stores/tabStore";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useSshStore } from "./stores/sshStore";
 import UpdateBanner from "./components/UpdateBanner";
+import { useUpdater } from "./hooks/useUpdater";
 export default function App() {
   const { loadBookmarks } = useBookmarkStore();
   const { loadConnections } = useSshStore();
   const { addTab } = useTabStore();
   const { defaultEncoding } = useSettingsStore();
   const [isDragOver, setIsDragOver] = useState(false);
+  const { state: updateState, install: installUpdate, dismiss: dismissUpdate } = useUpdater();
 
   const addTabRef = useRef(addTab);
   const defaultEncodingRef = useRef(defaultEncoding);
@@ -73,9 +75,10 @@ export default function App() {
       <Toolbar
         onExport={(fmt) => exportHandlerRef.current?.(fmt) ?? Promise.resolve()}
         displayLineCountRef={displayLineCountRef}
+        hasUpdate={updateState.phase === "available"}
       />
 
-      <UpdateBanner />
+      <UpdateBanner state={updateState} install={installUpdate} dismiss={dismissUpdate} />
 
       {isDragOver && (
         <div

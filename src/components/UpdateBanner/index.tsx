@@ -1,9 +1,14 @@
 import { useT } from "../../i18n";
-import { useUpdater } from "../../hooks/useUpdater";
+import type { UpdaterState } from "../../hooks/useUpdater";
 
-export default function UpdateBanner() {
+interface UpdateBannerProps {
+  state: UpdaterState;
+  install: () => Promise<void>;
+  dismiss: () => void;
+}
+
+export default function UpdateBanner({ state, install, dismiss }: UpdateBannerProps) {
   const t = useT();
-  const { state, install, dismiss } = useUpdater();
 
   if (state.phase === "idle") return null;
 

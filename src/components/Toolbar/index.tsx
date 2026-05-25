@@ -13,9 +13,10 @@ const ENCODINGS = ["UTF-8", "EUC-KR", "CP949", "UTF-16", "UTF-16BE"];
 interface ToolbarProps {
   onExport: (format: "txt" | "csv") => Promise<void>;
   displayLineCountRef: React.MutableRefObject<number>;
+  hasUpdate?: boolean;
 }
 
-export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps) {
+export default function Toolbar({ onExport, displayLineCountRef, hasUpdate = false }: ToolbarProps) {
   const t = useT();
   const { getActiveTab, updateTab } = useTabStore();
   const { language, setLanguage, wrapLines, setWrapLines } = useSettingsStore();
@@ -100,14 +101,31 @@ export default function Toolbar({ onExport, displayLineCountRef }: ToolbarProps)
         </button>
 
         {/* About 버튼 */}
-        <button
-          className="px-2 py-0.5 rounded text-xs hover:opacity-80 font-mono"
-          style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
-          onClick={() => { setShowAbout((v) => !v); setShowEncodings(false); setShowHighlights(false); setShowExportMenu(false); }}
-          title={t("about.title")}
-        >
-          ?
-        </button>
+        <div style={{ position: "relative", display: "inline-flex" }}>
+          <button
+            className="px-2 py-0.5 rounded text-xs hover:opacity-80 font-mono"
+            style={{ backgroundColor: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)" }}
+            onClick={() => { setShowAbout((v) => !v); setShowEncodings(false); setShowHighlights(false); setShowExportMenu(false); }}
+            title={hasUpdate ? t("update.available") : t("about.title")}
+          >
+            ?
+          </button>
+          {hasUpdate && (
+            <span
+              style={{
+                position: "absolute",
+                top: -3,
+                right: -3,
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                backgroundColor: "#f87171",
+                border: "1px solid var(--color-bg-secondary)",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </div>
 
         {/* 언어 토글 */}
         <button
