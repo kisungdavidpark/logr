@@ -8,6 +8,7 @@ import { useBookmarkStore } from "./stores/bookmarkStore";
 import { useTabStore } from "./stores/tabStore";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useSshStore } from "./stores/sshStore";
+import UpdateBanner from "./components/UpdateBanner";
 export default function App() {
   const { loadBookmarks } = useBookmarkStore();
   const { loadConnections } = useSshStore();
@@ -73,6 +74,8 @@ export default function App() {
         onExport={(fmt) => exportHandlerRef.current?.(fmt) ?? Promise.resolve()}
         displayLineCountRef={displayLineCountRef}
       />
+
+      <UpdateBanner />
 
       {isDragOver && (
         <div

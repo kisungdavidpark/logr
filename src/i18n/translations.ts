@@ -128,6 +128,13 @@ export const translations = {
     "about.license": "MIT License",
     "about.github": "GitHub",
     "about.close": "닫기",
+    // Updater
+    "update.available": "새 버전이 있습니다",
+    "update.install": "지금 업데이트",
+    "update.later": "나중에",
+    "update.downloading": "다운로드 중…",
+    "update.installing": "설치 중…",
+    "update.error": "업데이트 실패",
   },
   en: {
     // Sidebar
@@ -250,6 +257,13 @@ export const translations = {
     "ctx.reencoded": "Re-interpreted result",
     "ctx.selectAllHint": "Click to select all",
     "ctx.close": "Close",
+    // Updater
+    "update.available": "New version available",
+    "update.install": "Update now",
+    "update.later": "Later",
+    "update.downloading": "Downloading…",
+    "update.installing": "Installing…",
+    "update.error": "Update failed",
     // About
     "about.title": "Logr — Realtime Log Viewer",
     "about.description": "A GUI replacement for Unix tail -f",
