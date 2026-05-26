@@ -1,13 +1,8 @@
 import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { LogLine } from "../types";
 
-interface NewLogLinesPayload {
-  path: string;
-  lines: LogLine[];
-  new_pos: number;
-}
+const POLL_INTERVAL = 300; // ms
 
 export function useFileWatcher(
   filePath: string | null,
@@ -22,51 +17,32 @@ export function useFileWatcher(
   useEffect(() => {
     if (!filePath || !isFollowing) return;
 
-    let unlisten: UnlistenFn | null = null;
     let cancelled = false;
 
-    const setup = async () => {
+    const poll = async () => {
+      if (cancelled) return;
       try {
-        // follow 재활성화 시 중단 위치 이후 누락된 줄 먼저 보충
-        const fromPos = filePosRef.current;
-        if (fromPos > 0) {
+        const size = await invoke<number>("get_file_size", { path: filePath });
+        if (size > filePosRef.current) {
           const result = await invoke<{ lines: LogLine[]; new_pos: number }>(
             "read_lines_from_pos",
-            { path: filePath, fromPos, encoding }
+            { path: filePath, fromPos: filePosRef.current, encoding }
           );
-          if (!cancelled) {
+          if (!cancelled && result.lines.length > 0) {
             filePosRef.current = result.new_pos;
-            if (result.lines.length > 0) {
-              onNewLinesRef.current(result.lines);
-            }
+            onNewLinesRef.current(result.lines);
           }
         }
-
-        if (cancelled) return;
-
-        await invoke("start_watch", {
-          path: filePath,
-          encoding,
-          fromPos: filePosRef.current,
-        });
-
-        unlisten = await listen<NewLogLinesPayload>("new_log_lines", (event) => {
-          if (event.payload.path === filePath) {
-            filePosRef.current = event.payload.new_pos;
-            onNewLinesRef.current(event.payload.lines);
-          }
-        });
-      } catch (err) {
-        console.error("start_watch 실패:", err);
+      } catch {
+        // 파일 읽기 실패 시 조용히 무시 (파일 삭제/이동 등)
       }
     };
 
-    setup();
+    const intervalId = setInterval(poll, POLL_INTERVAL);
 
     return () => {
       cancelled = true;
-      invoke("stop_watch", { path: filePath }).catch(console.error);
-      unlisten?.();
+      clearInterval(intervalId);
     };
   }, [filePath, isFollowing, encoding]);
 }
